@@ -1,0 +1,34 @@
+.venv/
+__pycache__/
+*.pyc
+# Excel backup files
+~$*
+
+# VS Code config (jeśli nie chcesz go dzielić z innymi)
+.vscode/
+
+# Pliki tymczasowe systemu
+*.log
+.DS_Store
+Thumbs.db
+
+# Inne środowiska
+env/
+venv/
+
+# Notatniki Jupyter
+.ipynb_checkpoints/
+
+# Pliki tymczasowe systemowe
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Pliki kompilacji frontendowej (np. React)
+node_modules/
+dist/
+build/
+
+# Ślady po scalaniu
+*.orig

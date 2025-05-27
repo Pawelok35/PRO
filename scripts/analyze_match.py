@@ -1,7 +1,14 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from models.power_rating import calculate_power_rating_interactive
 from models.monte_carlo import simulate_match
-from utils.team_stats import calculate_team_stats
 from utils.data_loader import load_data
+from utils.team_stats import calculate_team_stats, calculate_power_score
+
+
+
 
 def analyze():
     print("🔍 Starting match analysis...")
@@ -36,10 +43,13 @@ def analyze():
 
     print(f"\n⚡ Power Rating {home_team}: {pr_home}")
     print(f"⚡ Power Rating {away_team}: {pr_away}")
+    result_signal = interpret_power_difference(home_team, away_team, pr_home, pr_away)
+    print(f"\n📊 Power Rating Difference: {result_signal['difference']}")
+    print(f"📢 Signal: {result_signal['signal']}")
 
     # xG = uproszczona wersja: wykorzystaj np. xG_avg z recent data
-    xg_home = stats_home["xG_diff"] + 1.5  # lub coś bardziej realistycznego
-    xg_away = stats_away["xG_diff"] + 1.2
+    xg_home = stats_home["xg_diff"] + 1.5  # lub coś bardziej realistycznego
+    xg_away = stats_away["xg_diff"] + 1.2
 
     print(f"\nEstimated xG → {home_team}: {xg_home:.2f}, {away_team}: {xg_away:.2f}")
 
@@ -48,3 +58,48 @@ def analyze():
     print(f"🏠 {home_team} Win Probability : {result['home_win_prob'] * 100:.1f}%")
     print(f"🤝 Draw Probability           : {result['draw_prob'] * 100:.1f}%")
     print(f"🛫 {away_team} Win Probability : {result['away_win_prob'] * 100:.1f}%")
+
+def interpret_power_difference(home_team, away_team, pr_home, pr_away):
+    diff = pr_home - pr_away
+    abs_diff = abs(diff)
+
+    if abs_diff >= 1.5:
+        signal = f"💡 WARTO ZAGRAĆ na {'gospodarza' if diff > 0 else 'gościa'} (duża przewaga)"
+    elif abs_diff >= 0.8:
+        signal = f"⚠️ Możliwa okazja na {'gospodarza' if diff > 0 else 'gościa'} (średnia przewaga)"
+    else:
+        signal = "⚖️ Wyrównany mecz – brak wyraźnej przewagi"
+
+    return {
+        "difference": round(diff, 2),
+        "signal": signal
+    }
+
+
+if __name__ == "__main__":
+    analyze()
+
+    # 🔧 TEST: Oblicz Power Score z przykładowych danych
+    team_data = {
+        'xpts_avg': 1.8,
+        'xg_diff': 0.5,
+        'form_score': 2.0,
+        'dominance_ratio': 0.4,
+        'sos_factor': 10.5,
+        'momentum': 1.0,
+        'efficiency_vs_opponent_tier': 0.6
+    }
+
+    user_config = {
+        'xpts_avg': 30,
+        'xg_diff': 20,
+        'form_score': 15,
+        'dominance_ratio': 10,
+        'sos_factor': 10,
+        'momentum': 10,
+        'efficiency_vs_opponent_tier': 5
+    }
+
+    score = calculate_power_score(team_data, user_config)
+    print("🔋 Power Score (example):", score)
+

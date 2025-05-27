@@ -66,11 +66,36 @@ def calculate_team_stats(df, team_name, side, current_round):
     efficiency = (recent_matches["xG"] / recent_matches["xG_Opponent"]).mean()
 
     return {
-        "xPTS_avg": round(xpts_avg, 3),
-        "xG_diff": round(xg_diff, 3),
-        "form_score": round(form_score, 3),
-        "dominance_ratio": round(dominance_ratio, 3),
-        "SoS_factor": round(SoS_factor, 3),
-        "momentum": momentum,
-        "efficiency_vs_opponent_tier": round(efficiency, 3)
-    }
+    "xpts_avg": round(xpts_avg, 3),
+    "xg_diff": round(xg_diff, 3),
+    "form_score": round(form_score, 3),
+    "dominance_ratio": round(dominance_ratio, 3),
+    "sos_factor": round(SoS_factor, 3),
+    "momentum": momentum,
+    "efficiency_vs_opponent_tier": round(efficiency, 3)
+}
+
+# Dostępne składniki Power Score
+available_power_score_components = {
+    'xpts_avg': 'Średnia xPTS z 5 meczów',
+    'xg_diff': 'Różnica xG - xGA',
+    'form_score': 'Punkty z ostatnich 5 meczów',
+    'dominance_ratio': 'Procent zwycięstw 3+ bramkami',
+    'sos_factor': 'Średnia siła przeciwników',
+    'momentum': 'Momentum (czy xPTS rośnie)',
+    'efficiency_vs_opponent_tier': 'Efektywność vs siła przeciwnika'
+}
+
+# Funkcja licząca Power Score na podstawie konfiguracji użytkownika
+def calculate_power_score(team_data: dict, selected_components: dict) -> float:
+    total_weight = sum(selected_components.values())
+    if total_weight == 0:
+        return 0.0
+
+    score = 0.0
+    for component, weight in selected_components.items():
+        normalized_weight = weight / total_weight
+        value = team_data.get(component) or 0  # <- zabezpieczenie
+        score += value * normalized_weight
+    return round(score, 2)
+
