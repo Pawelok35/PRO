@@ -37,8 +37,8 @@ def calculate_power_score(input_data: PowerScoreInput):
 import pandas as pd
 import os
 
-@app.get("/team_stats/{league}/{team}/{side}/{round}")
-def get_team_stats(league: str, team: str, side: str, round: int):
+@app.get("/team_stats/{league}/{team}/{side}/{matchday}")
+def get_team_stats(league: str, team: str, side: str, matchday: int):
     file_path = f"data/{league}_match_data_detailed.xlsx"
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Nie znaleziono pliku z danymi")
@@ -48,11 +48,30 @@ def get_team_stats(league: str, team: str, side: str, round: int):
     if side not in ["Home", "Away"]:
         raise HTTPException(status_code=400, detail="Side musi być 'Home' lub 'Away'")
 
-    df_team = df[(df["TEAM"] == team) & (df["Type"] == side) & (df["Round"] < round)]
+    # Normalizacja danych
+    df["TEAM"] = df["TEAM"].astype(str).str.strip()
+    df["Type"] = df["Type"].astype(str).str.capitalize()
+    df["Round"] = df["Round"].astype(int)
+
+    # Diagnostyka krok po kroku
+    df_1 = df[df["TEAM"] == team.strip()]
+    print("✅ Po TEAM:", len(df_1))
+
+    df_2 = df_1[df_1["Type"] == side.capitalize()]
+    print("✅ Po Type:", len(df_2))
+
+    df_team = df_2[df_2["Round"] < matchday]
+    print("✅ Po Round <", matchday, ":", len(df_team))
+
+    # Dodatkowy podgląd danych
+    print("🔍 Wszystkie rundy dla tej drużyny i typu:")
+    print(df_2[["Round", "Points", "xG", "xG_Opponent"]].sort_values("Round", ascending=False).head(10))
+
     df_team = df_team.sort_values("Round", ascending=False).head(5)
-    print("🔍 FILTR:", team, side, round)
+    print("🔍 FILTR:", team, side, matchday)
     print("✅ ZNALEZIONE MECZE:")
-    print(df_team[["TEAM", "Round", "Type", "xG", "xG_Opponent", "xPTS"]])
+    print(df_team[["TEAM", "Round", "Type", "xG", "xG_Opponent", "Points"]])
+
     print("➡️ LICZBA:", len(df_team))
 
 
@@ -77,11 +96,12 @@ def get_team_stats(league: str, team: str, side: str, round: int):
     efficiency = (df_team["xG"] / df_team["xG_Opponent"]).mean()
 
     return {
-        "xPTS_avg": round(xpts_avg, 3),
-        "xG_diff": round(xg_diff, 3),
-        "form_score": round(form_score, 3),
-        "dominance_ratio": round(dominance_ratio, 3),
-        "SoS_factor": round(sos_factor, 3),
-        "momentum": momentum,
-        "efficiency_vs_opponent_tier": round(efficiency, 3)
+        "Points_avg": float(round(xpts_avg, 3)),
+        "xG_diff": float(round(xg_diff, 3)),
+        "form_score": float(round(form_score, 3)),
+        "dominance_ratio": float(round(dominance_ratio, 3)),
+        "SoS_factor": float(round(sos_factor, 3)),
+        "momentum": int(momentum),
+        "efficiency_vs_opponent_tier": float(round(efficiency, 3))
     }
+
